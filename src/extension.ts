@@ -43,22 +43,22 @@ export async function activate(context: vscode.ExtensionContext) {
 		edit.insert(new vscode.Position(document.lineCount, 0), "=====\n");
 		edit.insert(new vscode.Position(document.lineCount, 0), text);
 		edit.insert(new vscode.Position(document.lineCount, 0), "\n");
-	}
+	};
 
 	var newDoc: vscode.TextDocument;
 	var lastRequestText: string = "";
 
 	async function showAiResponse(text: string) {
-		if (newDoc == null || newDoc.isClosed) {
+		if (!newDoc || newDoc.isClosed) {
 			newDoc = await vscode.workspace.openTextDocument();
 		}
-		if (newDoc == vscode.window.activeTextEditor?.document) {
+		if (newDoc === vscode.window.activeTextEditor?.document) {
 			var document = vscode.window.activeTextEditor?.document;
 			vscode.window.activeTextEditor.edit(addText(document, text));
 		} else {
 			await vscode.window.showTextDocument(newDoc, vscode.ViewColumn.Beside).then(e => {
 				e.edit(addText(e.document, text));
-			})
+			});
 		}
 	}
 
@@ -75,7 +75,7 @@ export async function activate(context: vscode.ExtensionContext) {
 			return editor.document.getText(selectionRange);
 		}
 		return null;
-	}
+	};
 
 	let makeAiRequestCommand = (useSelection: boolean, askSystemMessage: boolean) =>
 		async () => {
@@ -105,7 +105,7 @@ export async function activate(context: vscode.ExtensionContext) {
 			} catch (error) {
 				vscode.window.showErrorMessage('Failed to make request: ' + error);
 			}
-		}
+		};
 
 	let subscriptionAiProcessSelection = vscode.commands
 		.registerCommand('langstuff.aiProcessSelection',
