@@ -46,6 +46,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	}
 
 	var newDoc: vscode.TextDocument;
+	var lastRequestText: string = "";
 
 	async function showAiResponse(text: string) {
 		if (newDoc == null || newDoc.isClosed) {
@@ -80,21 +81,29 @@ export async function activate(context: vscode.ExtensionContext) {
 		async () => {
 			const userMessage = useSelection ? getCurrentEditorSelection() :
 				await vscode.window.showInputBox({
+					value: lastRequestText,
 					prompt: 'Enter the request:',
 					placeHolder: 'Request'
 				});
 
+			if (!userMessage) {
+				return;
+			}
+			if (!useSelection) {
+				lastRequestText = userMessage;
+			}
+
 			const systemMessage = askSystemMessage ? await vscode.window.showInputBox({
+				value: lastRequestText,
 				prompt: 'Enter the text request:',
 				placeHolder: 'Text Request'
 			}) : undefined;
-			if (userMessage) {
-				try {
-					const generatedText = await makeGpt4Request(userMessage, systemMessage);
-					showAiResponse(generatedText);
-				} catch (error) {
-					vscode.window.showErrorMessage('Failed to make request: ' + error);
-				}
+
+			try {
+				const generatedText = await makeGpt4Request(userMessage, systemMessage);
+				showAiResponse(generatedText);
+			} catch (error) {
+				vscode.window.showErrorMessage('Failed to make request: ' + error);
 			}
 		}
 
