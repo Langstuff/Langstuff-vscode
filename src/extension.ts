@@ -1,66 +1,18 @@
 import * as vscode from 'vscode';
-import http from 'http';
+import { SomeProvider } from "./panels/main";
+import makeAiRequest from "./ai/main";
 
-async function makeGpt4Request(userMessage: string, systemMessage?: string): Promise<string> {
-	return new Promise((resolve, reject) => {
-		const data = JSON.stringify({
-			userMessage: userMessage,
-			systemMessage: systemMessage
-		});
-
-		const options = {
-			hostname: '127.0.0.1',
-			port: '8080',
-			path: '/ai',
-			method: 'POST',
-		};
-
-		const req = http.request(options, (res: any) => {
-			let response = '';
-
-			res.on('data', (chunk: any) => {
-				response += chunk;
-			});
-
-			res.on('end', async () => {
-				resolve(response);
-			});
-		});
-
-		req.on('error', (error: any) => {
-			reject(error);
-		});
-
-		req.write(data);
-		req.end();
-	});
+function createChatProvider(context: vscode.ExtensionContext) {
+	var provider = new SomeProvider(context);
+	context.subscriptions.push(
+		vscode.window.registerWebviewViewProvider("langstuff.chat", provider));
+	return provider;
 }
 
 export async function activate(context: vscode.ExtensionContext) {
 	console.log('Extension "langstuff" is now active!');
-
-	let addText = (document: vscode.TextDocument, text: string) => (edit: vscode.TextEditorEdit) => {
-		edit.insert(new vscode.Position(document.lineCount, 0), "=====\n");
-		edit.insert(new vscode.Position(document.lineCount, 0), text);
-		edit.insert(new vscode.Position(document.lineCount, 0), "\n");
-	};
-
-	var newDoc: vscode.TextDocument;
+	var chatProvider = createChatProvider(context);
 	var lastRequestText: string = "";
-
-	async function showAiResponse(text: string) {
-		if (!newDoc || newDoc.isClosed) {
-			newDoc = await vscode.workspace.openTextDocument();
-		}
-		if (newDoc === vscode.window.activeTextEditor?.document) {
-			var document = vscode.window.activeTextEditor?.document;
-			vscode.window.activeTextEditor.edit(addText(document, text));
-		} else {
-			await vscode.window.showTextDocument(newDoc, vscode.ViewColumn.Beside).then(e => {
-				e.edit(addText(e.document, text));
-			});
-		}
-	}
 
 	let getCurrentEditorSelection = (): string | null => {
 		const editor = vscode.window.activeTextEditor;
@@ -98,10 +50,13 @@ export async function activate(context: vscode.ExtensionContext) {
 				prompt: 'Enter the text request:',
 				placeHolder: 'Text Request'
 			}) : undefined;
+			if (askSystemMessage && !systemMessage) {
+				return;
+			}
 
 			try {
-				const generatedText = await makeGpt4Request(userMessage, systemMessage);
-				showAiResponse(generatedText);
+				const generatedText = await makeAiRequest(userMessage, systemMessage);
+				chatProvider.addMessage(generatedText);
 			} catch (error) {
 				vscode.window.showErrorMessage('Failed to make request: ' + error);
 			}
