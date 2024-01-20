@@ -21,7 +21,7 @@ async function makeAiRequest(userMessage: string, systemMessage?: string): Promi
             });
 
             res.on('end', async () => {
-                resolve(response);
+                resolve(JSON.parse(response).response);
             });
         });
 
