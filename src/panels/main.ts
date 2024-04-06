@@ -3,6 +3,7 @@ import { Disposable, Webview, window } from "vscode";
 import { getUri } from "../utilities/getUri";
 import { getNonce } from "../utilities/getNonce";
 import makeAiRequest from "../ai/main";
+import { Message } from "../interfaces";
 
 function getWebviewOptions(extensionUri: vscode.Uri): vscode.WebviewOptions {
     return {
@@ -14,7 +15,7 @@ function getWebviewOptions(extensionUri: vscode.Uri): vscode.WebviewOptions {
 export class SomeProvider implements vscode.WebviewViewProvider {
     private _view?: vscode.WebviewView;
     private _disposables: Disposable[] = [];
-    private messages: String[] = [];
+    private messages: Message[] = [];
 
     constructor(private readonly _context: vscode.ExtensionContext) { }
 
@@ -95,7 +96,10 @@ export class SomeProvider implements vscode.WebviewViewProvider {
                         return;
                     case "sendAiRequest":
                         makeAiRequest(text).then((ret) => {
-                            this.addMessage(ret);
+                            this.addMessage({
+                                userMessage: text,
+                                response: ret,
+                            });
                         });
                         return;
                     case "requestMessages":
@@ -111,7 +115,7 @@ export class SomeProvider implements vscode.WebviewViewProvider {
         );
     }
 
-    public addMessage(message: string) {
+    public addMessage(message: Message) {
         this.messages.push(message);
         this.sendCommandToWebview({
             type: 'updateMessages',

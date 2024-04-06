@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { SomeProvider } from "./panels/main";
 import makeAiRequest from "./ai/main";
+import { Message } from "./interfaces";
 
 function createChatProvider(context: vscode.ExtensionContext) {
 	var provider = new SomeProvider(context);
@@ -72,7 +73,11 @@ export async function activate(context: vscode.ExtensionContext) {
 
 			try {
 				const generatedText = await makeAiRequest(userMessage, processedSystemMessage);
-				chatProvider.addMessage(generatedText);
+				chatProvider.addMessage({
+					userMessage: userMessage,
+					systemMessage: systemMessage,
+					response: generatedText,
+				});
 			} catch (error) {
 				vscode.window.showErrorMessage('Failed to make request: ' + error);
 			}

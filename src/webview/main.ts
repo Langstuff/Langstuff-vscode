@@ -9,6 +9,7 @@ import {
 import markdownit from 'markdown-it';
 import hljs from 'highlight.js';
 import MarkdownIt from "markdown-it";
+import { Message } from "../interfaces";
 
 const md: MarkdownIt = markdownit({
     highlight: function (str, lang) {
@@ -70,15 +71,60 @@ function main() {
     vscode.postMessage({ command: "requestMessages" });
 }
 
-function addMessage(message: string) {
+function cutString(str: string, max: number) {
+    if (str.length > max) {
+        return str.substring(0, max) + "…";
+    }
+    return str;
+}
+
+function addMessage(message: Message) {
+    let { response, systemMessage, userMessage } = message;
+    systemMessage = systemMessage;
+
     var div = document.createElement("div");
-    div.innerHTML = md.render(message);
+
+    var summary = document.createElement("div");
+    summary.classList.add("summary");
+    if (systemMessage) {
+        summary.innerHTML = `> ${cutString(systemMessage, 10)} / ${cutString(userMessage, 20)}`;
+    } else {
+        summary.innerHTML = `> ${cutString(userMessage, 20)}`;
+    }
+    div.appendChild(summary);
+
+    var details = document.createElement("div");
+    details.classList.add("details");
+
+    if (systemMessage) {
+        details.innerHTML = `> ${systemMessage}<br>> ${userMessage}`;
+    } else {
+        details.innerHTML = `> ${userMessage}`;
+    }
+    details.style.display = "none";
+    div.appendChild(details);
+
+    div.addEventListener("click", () => {
+        if (details.style.display === "none") {
+            summary.style.display = "none";
+            details.style.display = "block";
+        } else {
+            details.style.display = "none";
+            summary.style.display = "block";
+        }
+    });
+
     messageContainer?.appendChild(div);
+
+    var responseDiv = document.createElement("div");
+    responseDiv.innerHTML = md.render(response);
+    div.appendChild(responseDiv);
+
     var divider = document.createElement("vscode-divider");
     messageContainer?.appendChild(divider);
 }
 
-function drawMessages(messages: string[]) {
+function drawMessages(messages: Message[]) {
     messageContainer!.innerHTML = "";
     messages.forEach(addMessage);
 }
