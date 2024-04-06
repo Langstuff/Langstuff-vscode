@@ -29,6 +29,13 @@ export async function activate(context: vscode.ExtensionContext) {
 		return null;
 	};
 
+	let processCommand = (msg: string): string => {
+		if (msg.startsWith("/tr")) {
+			msg = msg.replace("/tr", "Translate");
+		}
+		return msg;
+	};
+
 	let makeAiRequestCommand = (useSelection: boolean, askSystemMessage: boolean) =>
 		async () => {
 			const userMessage = useSelection ? getCurrentEditorSelection() :
@@ -57,8 +64,14 @@ export async function activate(context: vscode.ExtensionContext) {
 			if (useSelection) {
 				lastRequestText = systemMessage || "";
 			}
+
+			var processedSystemMessage = systemMessage;
+			if (systemMessage?.startsWith("/")) {
+				processedSystemMessage = processCommand(systemMessage);
+			}
+
 			try {
-				const generatedText = await makeAiRequest(userMessage, systemMessage);
+				const generatedText = await makeAiRequest(userMessage, processedSystemMessage);
 				chatProvider.addMessage(generatedText);
 			} catch (error) {
 				vscode.window.showErrorMessage('Failed to make request: ' + error);
