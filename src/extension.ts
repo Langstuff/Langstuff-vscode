@@ -54,6 +54,9 @@ export async function activate(context: vscode.ExtensionContext) {
 				return;
 			}
 
+			if (useSelection) {
+				lastRequestText = systemMessage || "";
+			}
 			try {
 				const generatedText = await makeAiRequest(userMessage, systemMessage);
 				chatProvider.addMessage(generatedText);
